@@ -5,6 +5,8 @@
                    :asset-path "/js/main"
                    :modules    {:main {:init-fn app.client/init
                                        :entries [app.client]}}
+                   :dev        {:closure-defines {com.fulcrologic.fulcro.inspect.inspect_ws/SERVER_PORT 8237}}
                    :devtools   {:after-load  app.client/refresh
                                 :repl-pprint true
-                                :preloads    [com.fulcrologic.fulcro.inspect.preload]}}}}
+                                :preloads    [com.fulcrologic.fulcro.inspect.preload
+                                              com.fulcrologic.fulcro.inspect.websocket-preload]}}}}
