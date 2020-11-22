@@ -5,6 +5,7 @@
    [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
    [com.fulcrologic.fulcro.algorithms.merge :as merge]
    [com.fulcrologic.fulcro.algorithms.denormalize :as dn]
+   [com.fulcrologic.fulcro.algorithms.normalize :as normalize]
    [app.mutations :as api]))
 
 (defsc component [this {:table/keys [id] :as props}]
@@ -27,21 +28,35 @@
 ;; The keyfn generates a react key for each element based on props. See React documentation on keys.
 (def ui-person (comp/factory Person {:keyfn :person/name}))
 
-(defsc PersonList [this {:list/keys [id label people] :as props}]
-  {:query [:list/id :list/label {:list/people (comp/get-query Person)}]
+(defsc PersonList [this {:list/keys [id label people input-name input-age] :as props}]
+  {:query [:list/id :list/label :list/input-name :list/input-age {:list/people (comp/get-query Person)}]
    :ident :list/id
    :initial-state
    (fn [{:keys [id label] :as params}]
-     {:list/id     id
-      :list/label  label
-      :list/people (id {:friends [(comp/get-initial-state Person {:id 1 :name "Sally" :age 32})
-                                  (comp/get-initial-state Person {:id 2 :name "Joe" :age 10})]
-                        :enemies [(comp/get-initial-state Person {:id 3 :name "Fred" :age 2})
-                                  (comp/get-initial-state Person {:id 4 :name "Bob" :age 1})]})})}
+     {:list/id         id
+      :list/label      label
+      :list/input-name ""
+      :list/input-age  ""
+      :list/people     (id {:friends [(comp/get-initial-state Person {:id (random-uuid) :name "Sally" :age 32})
+                                      (comp/get-initial-state Person {:id (random-uuid) :name "Joe" :age 10})]
+                            :enemies [(comp/get-initial-state Person {:id (random-uuid) :name "Fred" :age 2})
+                                      (comp/get-initial-state Person {:id (random-uuid) :name "Bob" :age 1})]})})}
   (let [delete-person (fn [person-id] (do (println label "asked to delete" name)
                                           (comp/transact! this [(api/delete-person {:list/id id :person/id person-id})])))]
     (dom/div
       (dom/h4 label)
+      (dom/input {:type     "text"
+                  :value    input-name
+                  :onChange #(m/set-string! this :list/input-name :event %)})
+      (dom/input {:type     "text"
+                  :value    input-age
+                  :onChange #(m/set-string! this :list/input-age :event %)})
+      (dom/button
+        {:onClick #(merge/merge-component! this Person {:person/id   (random-uuid)
+                                                        :person/name input-name
+                                                        :person/age  (js/parseInt input-age)}
+                                           :append [:list/id id :list/people])}
+        "Add person")
       (dom/ul
         (map #(ui-person (comp/computed % {:onDelete delete-person})) people)))))
 
@@ -59,11 +74,18 @@
     (ui-person-list enemies)))
 
 (comment
-  (def state (com.fulcrologic.fulcro.application/current-state app.application/app))
-  state
+  (def normalized-state (com.fulcrologic.fulcro.application/current-state app.application/app))
+  normalized-state
   (def query (comp/get-query app.ui/Root))
   query
-  (dn/db->tree query state state)
+  (def denormalized-state (dn/db->tree query normalized-state normalized-state))
+  denormalized-state
+  ;; The following demonstrates how the tree of data is auto-normalised.
+  ;; The tree->db algorithm simultaneously walks the data tree and a component-annotated query.
+  ;; When it reaches a data node whose query metadata names a component with an ident it
+  ;; places that data into the appropriate table (by calling your ident function),
+  ;; and replaces the data in the tree with its ident.
+  (normalize/tree->db app.ui/Root denormalized-state true)
   (dn/db->tree [{:enemies [:list/label]}] (comp/get-initial-state app.ui/Root {}) {})
   (comp/get-initial-state app.ui/Root {})
   (pr-str "hey")
