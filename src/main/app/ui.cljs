@@ -3,10 +3,12 @@
    [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
    [com.fulcrologic.fulcro.dom :as dom]
    [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
-   [com.fulcrologic.fulcro.algorithms.merge :as merge]))
+   [com.fulcrologic.fulcro.algorithms.merge :as merge]
+   [com.fulcrologic.fulcro.algorithms.denormalize :as fdn]))
 
 (defsc Person [this {:person/keys [name age]}]
-  {:initial-state (fn [{:keys [name age] :as params}] {:person/name name :person/age age})}
+  {:query         [:person/name :person/age]
+   :initial-state (fn [{:keys [name age] :as params}] {:person/name name :person/age age})}
   (dom/li
     (dom/h5 (str name " (age: " age ")"))))
 
@@ -14,7 +16,8 @@
 (def ui-person (comp/factory Person {:keyfn :person/name}))
 
 (defsc PersonList [this {:list/keys [label people]}]
-  {:initial-state
+  {:query [:list/label {:list/people (comp/get-query Person)}]
+   :initial-state
    (fn [{:keys [label] :as params}]
      {:list/label  label
       :list/people [(comp/get-initial-state Person {:name "Sally" :age 32})
@@ -28,18 +31,16 @@
 (def ui-person-list (comp/factory PersonList))
 
 (defsc Root [this {:keys [friends enemies]}]
-  {:initial-state (fn [params]
-                    {:friends {:list/label "Friends" :list/people
-                               [{:person/name "Sally" :person/age 32}
-                                {:person/name "Joe" :person/age 22}]}
-                     :enemies {:list/label "Enemies" :list/people
-                               [{:person/name "Fred" :person/age 11}
-                                {:person/name "Bobby" :person/age 55}]}})}
+  {:query         [{:friends (comp/get-query PersonList)}
+                   {:enemies (comp/get-query PersonList)}]
+   :initial-state (fn [params] {:friends (comp/get-initial-state PersonList {:label "Friends"})
+                                :enemies (comp/get-initial-state PersonList {:label "Enemies"})})}
   (dom/div
     (ui-person-list friends)
     (ui-person-list enemies)))
 
 (comment
+  (fdn/db->tree [{:friends [:list/label]}] (comp/get-initial-state app.ui/Root {}) {})
   (comp/get-initial-state app.ui/Root {})
   (pr-str "hey")
   (+ 3 (+ 1 2)))
