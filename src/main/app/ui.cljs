@@ -4,7 +4,8 @@
    [com.fulcrologic.fulcro.dom :as dom]
    [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
    [com.fulcrologic.fulcro.algorithms.merge :as merge]
-   [com.fulcrologic.fulcro.algorithms.denormalize :as fdn]))
+   [com.fulcrologic.fulcro.algorithms.denormalize :as fdn]
+   [app.mutations :as api]))
 
 (defsc Person [this {:person/keys [name age]} {:keys [onDelete] :as comp-params}]
   {:query         [:person/name :person/age]
@@ -23,7 +24,8 @@
      {:list/label  label
       :list/people [(comp/get-initial-state Person {:name "Sally" :age 32})
                     (comp/get-initial-state Person {:name "Joe" :age 10})]})}
-  (let [delete-person (fn [name] (println label "asked to delete" name))]
+  (let [delete-person (fn [name] (do (println label "asked to delete" name)
+                                     (comp/transact! this [(api/delete-person {:list-name label :name name})])))]
     (dom/div
       (dom/h4 label)
       (dom/ul
