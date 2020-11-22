@@ -1,12 +1,24 @@
-(ns app.client
+(ns app.main-ws
   (:require
-   [com.fulcrologic.fulcro.application :as app]
    [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
    [com.fulcrologic.fulcro.dom :as dom]
    [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
-   [com.fulcrologic.fulcro.algorithms.merge :as merge]))
+   [nubank.workspaces.card-types.fulcro3 :as f3]
+   [nubank.workspaces.core :as ws]))
 
-(defonce app (app/fulcro-app))
+(defsc FulcroDemo
+  [this {:keys [counter] :as props}]
+  {:initial-state (fn [_] {:counter 0})
+   :ident         (fn [] [::id "singleton"])
+   :query         [:counter]}
+  (dom/div
+    (dom/pre (with-out-str (cljs.pprint/pprint props)))
+    (str "Fulcro counter demo [" counter "]")
+    (dom/button {:onClick #(m/set-value! this :counter (inc counter))} "+")))
+
+(ws/defcard fulcro-demo-card
+  (f3/fulcro-card
+    {::f3/root FulcroDemo}))
 
 (defmutation add-thing
   "Mutation: Add a thing to :a-list-of-things"
@@ -22,7 +34,7 @@
    :ident :a-thing}
   (dom/div {:style {:border "1px solid black"}}
            (dom/p "This is a thing")
-           (pr-str props)))
+           (dom/pre (with-out-str (cljs.pprint/pprint props)))))
 
 (def ui-thing (comp/factory Thing {:keyfn :a-thing}))
 
@@ -34,25 +46,11 @@
                                                :fav-colour "blue"}]})}
   (dom/div
     (dom/h3 "This is root!")
-    (pr-str props)
+    (dom/pre (with-out-str (cljs.pprint/pprint props)))
     (map ui-thing (:a-list-of-things props))))
 
-(defn ^:export init
-  "Shadow-cljs sets this up to be our entry-point function. See shadow-cljs.edn `:init-fn` in the modules of the main build."
-  []
-  (app/mount! app Root "app")
-  (js/console.log "Loaded"))
+(ws/defcard fulcro-demo-thing
+  (f3/fulcro-card
+    {::f3/root Root}))
 
-(defn ^:export refresh
-  "During development, shadow-cljs will call this on every hot reload of source. See shadow-cljs.edn"
-  []
-  ;; re-mounting will cause forced UI refresh, update internals, etc.
-  (app/mount! app Root "app")
-  ;; As of Fulcro 3.3.0, this addition will help with stale queries when using dynamic routing:
-  (comp/refresh-dynamic-queries! app)
-  (js/console.log "Hot reload"))
-
-(comment
-  (pr-str "hey")
-  (+ 3 (+ 1 2))
-  (comp/transact! app [(add-thing {})]))
+(defonce init (ws/mount))

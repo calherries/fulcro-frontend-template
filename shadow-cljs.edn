@@ -1,12 +1,22 @@
 {:deps     {:aliases [:dev]}
  :dev-http {8000 "classpath:public"}
- :builds   {:main {:target     :browser
-                   :output-dir "resources/public/js/main"
-                   :asset-path "/js/main"
-                   :modules    {:main {:init-fn app.client/init
-                                       :entries [app.client]}}
-                   :dev        {:closure-defines {com.fulcrologic.fulcro.inspect.inspect_ws/SERVER_PORT 8237}}
-                   :devtools   {:after-load  app.client/refresh
-                                :repl-pprint true
-                                :preloads    [com.fulcrologic.fulcro.inspect.preload
-                                              com.fulcrologic.fulcro.inspect.websocket-preload]}}}}
+ :builds   {:main       {:target     :browser
+                         :output-dir "resources/public/js/main"
+                         :asset-path "/js/main"
+                         :modules    {:main {:init-fn app.client/init
+                                             :entries [app.client]}}
+                         :dev        {:closure-defines {com.fulcrologic.fulcro.inspect.inspect_ws/SERVER_PORT 8237}}
+                         :devtools   {:after-load  app.client/refresh
+                                      :repl-pprint true
+                                      :preloads    [com.fulcrologic.fulcro.inspect.preload
+                                                    com.fulcrologic.fulcro.inspect.websocket-preload]}}
+            :workspaces {:target     :browser
+                         :modules    {:workspaces {:entries [app.main-ws]
+                                                   :init-fn app.main-ws/init}}
+                                        ;:ns-regexp  "-(test|ws)$"
+                         :output-dir "resources/public/workspaces/js"
+                         :asset-path "/js"
+                         :devtools   {:http-root        "resources/public/workspaces"
+                                      :push-state/index "workspaces.html"
+                                      :http-port        8023
+                                      :preloads         [com.fulcrologic.fulcro.inspect.preload]}}}}
