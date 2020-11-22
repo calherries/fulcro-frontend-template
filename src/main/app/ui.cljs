@@ -5,36 +5,41 @@
    [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
    [com.fulcrologic.fulcro.algorithms.merge :as merge]))
 
-(defmutation add-thing
-  "Mutation: Add a thing to :a-list-of-things"
-  [params]
-  (action [{:keys [state]}]
-          (println (pr-str @state))
-          (let [class (comp/registry-key->class :app.client/Thing)]
-            (swap! state merge/merge-component class {:a-thing "four stuff"}
-                   :append [:a-list-of-things]))))
+(defsc Person [this {:person/keys [name age]}]
+  {:initial-state (fn [{:keys [name age] :as params}] {:person/name name :person/age age})}
+  (dom/li
+    (dom/h5 (str name " (age: " age ")"))))
 
-(defsc Thing [this props]
-  {:query [:a-thing :fav-colour]
-   :ident :a-thing}
-  (dom/div {:style {:border "1px solid black"}}
-           (dom/p "This is a thing")
-           (pr-str props)))
+;; The keyfn generates a react key for each element based on props. See React documentation on keys.
+(def ui-person (comp/factory Person {:keyfn :person/name}))
 
-(def ui-thing (comp/factory Thing {:keyfn :a-thing}))
-
-(defsc Root [this props]
-  {:query         [{:a-list-of-things (comp/get-query Thing)}] ;; this tells fulcro that Thing owns the state under :an-added-level.
-   :initial-state (fn [_] {:a-list-of-things [{:a-thing    "1 stuff"
-                                               :fav-colour "red"}
-                                              {:a-thing    "2 stuff"
-                                               :fav-colour "blue"}]})}
+(defsc PersonList [this {:list/keys [label people]}]
+  {:initial-state
+   (fn [{:keys [label] :as params}]
+     {:list/label  label
+      :list/people [(comp/get-initial-state Person {:name "Sally" :age 32})
+                    (comp/get-initial-state Person {:name "Joe" :age 10})]}
+     )}
   (dom/div
-    (dom/h3 "This is root!")
-    (pr-str props)
-    (map ui-thing (:a-list-of-things props))))
+    (dom/h4 label)
+    (dom/ul
+      (map ui-person people))))
+
+(def ui-person-list (comp/factory PersonList))
+
+(defsc Root [this {:keys [friends enemies]}]
+  {:initial-state (fn [params]
+                    {:friends {:list/label "Friends" :list/people
+                               [{:person/name "Sally" :person/age 32}
+                                {:person/name "Joe" :person/age 22}]}
+                     :enemies {:list/label "Enemies" :list/people
+                               [{:person/name "Fred" :person/age 11}
+                                {:person/name "Bobby" :person/age 55}]}})}
+  (dom/div
+    (ui-person-list friends)
+    (ui-person-list enemies)))
 
 (comment
+  (comp/get-initial-state app.ui/Root {})
   (pr-str "hey")
-  (+ 3 (+ 1 2))
-  (comp/transact! app [(add-thing {})]))
+  (+ 3 (+ 1 2)))
