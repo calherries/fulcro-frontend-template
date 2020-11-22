@@ -22,7 +22,7 @@
    :initial-state (fn [{:keys [id name age] :as params}] {:person/id id :person/name name :person/age age})}
   (dom/li
     (dom/h5 (str name " (age: " age ")"))
-    (dom/button {:onClick #(onDelete name)} "X")))
+    (dom/button {:onClick #(onDelete id)} "X")))
 
 ;; The keyfn generates a react key for each element based on props. See React documentation on keys.
 (def ui-person (comp/factory Person {:keyfn :person/name}))
@@ -38,8 +38,8 @@
                                   (comp/get-initial-state Person {:id 2 :name "Joe" :age 10})]
                         :enemies [(comp/get-initial-state Person {:id 3 :name "Fred" :age 2})
                                   (comp/get-initial-state Person {:id 4 :name "Bob" :age 1})]})})}
-  (let [delete-person (fn [name] (do (println label "asked to delete" name)
-                                     (comp/transact! this [(api/delete-person {:list-name label :name name})])))]
+  (let [delete-person (fn [person-id] (do (println label "asked to delete" name)
+                                          (comp/transact! this [(api/delete-person {:list/id id :person/id person-id})])))]
     (dom/div
       (dom/h4 label)
       (dom/ul
@@ -61,8 +61,8 @@
 (comment
   (def state (com.fulcrologic.fulcro.application/current-state app.application/app))
   state
-  query
   (def query (comp/get-query app.ui/Root))
+  query
   (dn/db->tree query state state)
   (dn/db->tree [{:enemies [:list/label]}] (comp/get-initial-state app.ui/Root {}) {})
   (comp/get-initial-state app.ui/Root {})
