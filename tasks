@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# === DEV ===
+
+build-css-dev () {
+  mkdir -p resources/public/css
+  npx tailwindcss build tailwind.css -o resources/public/css/main.css
+}
+
+init () {
+  if [ -f package.json ]; then
+    npm install
+  else
+    npm init -y
+    npm install --save react react-dom
+    npm install --save-dev shadow-cljs tailwindcss onchange autoprefixer
+  fi
+  echo
+  echo Initialization complete.
+}
+
+dev () {
+  npx onchange -i tailwind.css -- ./task build-css-dev &
+}
+
+# === BUILD ===
+
+build-css () {
+  NODE_ENV=production npx tailwindcss build tailwind.css -o resources/public/css/main.css
+}
+
+build-assets () {
+  build-css
+  build-cljs
+}

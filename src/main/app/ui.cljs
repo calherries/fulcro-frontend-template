@@ -21,9 +21,9 @@
   {:query         [:person/id :person/name :person/age]
    :ident         :person/id
    :initial-state (fn [{:keys [id name age] :as params}] {:person/id id :person/name name :person/age age})}
-  (dom/li
-    (dom/h5 (str name " (age: " age ")"))
-    (dom/button {:onClick #(onDelete id)} "X")))
+  (dom/li :.font-bold.text-xs
+          (dom/h5 (str name " (age: " age ")"))
+          (dom/button {:onClick #(onDelete id)} "X")))
 
 ;; The keyfn generates a react key for each element based on props. See React documentation on keys.
 (def ui-person (comp/factory Person {:keyfn :person/name}))

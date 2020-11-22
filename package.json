@@ -4,17 +4,26 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"yarn watch:css\"",
+    "watch:css": "onchange -i 'tailwind.css' -- npm run build:css",
+    "build:css": "tailwindcss build tailwind.css -o resources/public/css/main.css"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "autoprefixer": "^9.8.6",
     "highlight.js": "9.18.5",
+    "postcss": "^7.0.35",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
     "react-grid-layout": "0.16.6",
     "react-icons": "2.2.7",
     "reakit": "0.11.2",
-    "shadow-cljs": "^2.11.5"
+    "shadow-cljs": "^2.11.5",
+    "tailwindcss": "^1.7.6"
+  },
+  "devDependencies": {
+    "onchange": "^7.1.0"
   }
 }
