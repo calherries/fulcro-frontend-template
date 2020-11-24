@@ -62,16 +62,38 @@
 
 (def ui-person-list (comp/factory PersonList))
 
-(defsc Root [this {:keys [friends enemies]}]
-  {:query         [{:friends (comp/get-query PersonList)}
-                   {:enemies (comp/get-query PersonList)}]
-   :initial-state (fn [params] {:friends (comp/get-initial-state PersonList {:id    :friends
-                                                                             :label "Friends"})
-                                :enemies (comp/get-initial-state PersonList {:id    :enemies
-                                                                             :label "Enemies"})})}
+(defsc Todo [this {:todo/keys [id content] :as props}]
+  {:query [:todo/id :todo/content]
+   :ident :todo/id}
   (dom/div
-    (ui-person-list friends)
-    (ui-person-list enemies)))
+    (dom/pre (with-out-str (cljs.pprint/pprint props)))
+    (dom/p content)))
+
+(def ui-todo (comp/factory Todo {:keyfn :todo/id}))
+
+(defsc TodoList [this {:todo-list/keys [new-item-text todos filter] :as props}]
+  {:query         [:todo-list/new-item-text :todo-list/todos :todo-list/filter]
+   :ident         (fn [] [:component/by-id :todo-list])
+   :initial-state #:todo-list {:new-item-text ""
+                               :todos         []
+                               :filter        nil}}
+  (dom/div
+    (dom/h3 "TodoList")
+    (map ui-todo todos)
+    (dom/button
+      {:onClick #(merge/merge-component! this Todo {:todo/id      (random-uuid)
+                                                    :todo/content "default"}
+                                         :append [:component/by-id :todo-list :todo-list/todos])}
+      "Add default todo")
+    (dom/pre (with-out-str (cljs.pprint/pprint props)))))
+
+(def ui-todo-list (comp/factory TodoList))
+
+(defsc Root [this {:keys [todo-list]}]
+  {:query         [{:todo-list (comp/get-query TodoList)}]
+   :initial-state (fn [p] {:todo-list (comp/get-initial-state TodoList {})})}
+  (dom/div
+    (ui-todo-list todo-list)))
 
 (comment
   (def normalized-state (com.fulcrologic.fulcro.application/current-state app.application/app))
